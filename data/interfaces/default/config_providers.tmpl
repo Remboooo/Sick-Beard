@@ -85,7 +85,7 @@
                                 <span class="component-title jumbo">Configure Provider:</span>
                                 <span class="component-desc">
                                     #set $provider_config_list = []
-                                    #for $cur_provider in ("nzbs_r_us", "omgwtfnzbs", "tvtorrents", "torrentleech", "btn"):
+                                    #for $cur_provider in ("nzbs_r_us", "omgwtfnzbs", "tvtorrents", "torrentleech", "btn", "bitmetv"):
                                         #set $cur_provider_obj = $sickbeard.providers.getProviderClass($cur_provider)
                                         $provider_config_list.append($cur_provider_obj)
                                     #end for
@@ -93,11 +93,11 @@
                                     #if $provider_config_list:
                                     <select id="editAProvider" class="input-medium" >
                                         #for $cur_provider in $provider_config_list + [$curProvider for $curProvider in $sickbeard.newznabProviderList if $curProvider.default and $curProvider.needs_auth]:
-	                                        #if $cur_provider.providerType == $GenericProvider.NZB and not $sickbeard.USE_NZBS:
-	                                            #continue
-	                                        #elif $cur_provider.providerType == $GenericProvider.TORRENT and not $sickbeard.USE_TORRENTS:
-	                                            #continue
-	                                        #end if
+                                            #if $cur_provider.providerType == $GenericProvider.NZB and not $sickbeard.USE_NZBS:
+                                                #continue
+                                            #elif $cur_provider.providerType == $GenericProvider.TORRENT and not $sickbeard.USE_TORRENTS:
+                                                #continue
+                                            #end if
                                             <option value="$cur_provider.getID()">$cur_provider.name</option>
                                         #end for
                                     </select>
@@ -189,6 +189,68 @@
                             </label>
                         </div>
                     </div><!-- /btnDiv //-->
+
+                    <div class="providerDiv" id="bitmetvDiv">
+                        <p>To use the BitMeTV provider, you must first acquire your user ID (UID), passkey and pass.
+                        Sickbeard can retrieve these for you if you login below.
+                        Your username and password will not be stored anywhere, but used just this once and then discarded.<p>
+                        <label class="clearfix">
+                            <span class="component-title">&nbsp;</span>
+                            <span class="component-desc"><input type="button" id="getBitMeTVCaptcha" value="Get captcha to login" /></span>
+                        </label>
+                        <label class="clearfix">
+                            <span class="component-title">&nbsp;</span>
+                            <span class="component-desc" id="bitmetvCaptchaPic">&nbsp;</span>
+                        </label>
+                        <div id="bitmetvLoginForm">
+                            <div class="field-pair">
+                                <label class="clearfix">
+                                    <span class="component-title">Captcha:</span>
+                                    <input class="component-desc" type="text" id="bitmetv_captcha" size="40" />
+                                </label>
+                            </div>
+                            <div class="field-pair">
+                                <label class="clearfix">
+                                    <span class="component-title">Username:</span>
+                                    <input class="component-desc" type="text" id="bitmetv_user" size="40" />
+                                </label>
+                            </div>
+                            <div class="field-pair">
+                                <label class="clearfix">
+                                    <span class="component-title">Password:</span>
+                                    <input class="component-desc" type="password" id="bitmetv_password" size="40" />
+                                </label>
+                            </div>
+                            <div class="field-pair">
+                                <label class="clearfix">
+                                    <span class="component-title">&nbsp;</span>
+                                    <span class="component-desc">
+                                        <input type="button" id="getBitMeTVAuth" value="Authorize" />
+                                        <div id="bitmetvAuthResult"></div>
+                                    </span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="field-pair">
+                            <label class="clearfix">
+                                <span class="component-title">BitMeTV user ID (UID):</span>
+                                <input class="component-desc" type="text" name="bitmetv_uid" id="bitmetv_uid" value="$sickbeard.BITMETV_UID" size="40" />
+                            </label>
+                        </div>
+                        <div class="field-pair">
+                            <label class="clearfix">
+                                <span class="component-title">BitMeTV Passkey:</span>
+                                <input class="component-desc" type="text" name="bitmetv_passkey" id="bitmetv_passkey" value="$sickbeard.BITMETV_PASSKEY" size="40" />
+                            </label>
+                        </div>
+                        <div class="field-pair">
+                            <label class="clearfix">
+                                <span class="component-title">BitMeTV Pass:<br />(NOT your password!)</span>
+                                <input class="component-desc" type="text" name="bitmetv_pass" id="bitmetv_pass" value="$sickbeard.BITMETV_PASS" size="40" />
+                            </label>
+                        </div>
+                    </div><!-- /bitmetvDiv //-->
+
 
 <!-- end div for editing providers -->
 

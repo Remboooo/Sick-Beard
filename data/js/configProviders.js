@@ -1,4 +1,7 @@
 $(document).ready(function(){
+    var loading = '<img src="'+sbRoot+'/images/loading16.gif" height="16" width="16" />';
+    var success = '<img src="'+sbRoot+'/images/yes16.png" height="16" width="16" />';
+    var failure = '<img src="'+sbRoot+'/images/no16.png" height="16" width="16" />';
 
     $.fn.showHideProviders = function() {
         $('.providerDiv').each(function(){
@@ -205,4 +208,36 @@ $(document).ready(function(){
 
     $("#providerOrderList").disableSelection();
 
+    $("#bitmetvLoginForm").hide();
+
+    $("#getBitMeTVCaptcha").click(function() {
+        $("#bitmetvCaptchaPic").html(loading);
+        $.get(sbRoot+"/home/getBitMeTVCaptcha",{},
+            function (data) {
+                $("#bitmetvCaptchaPic").html('<img src="data:image/jpg;base64,'+data+'" />');
+                $("#bitmetvLoginForm").show();
+            }
+        );
+    });
+
+    $("#getBitMeTVAuth").click(function() {
+        $("#bitmetvAuthResult").html(loading);
+        var bitmetv_user = $("#bitmetv_user").val();
+        var bitmetv_pass = $("#bitmetv_password").val();
+        var bitmetv_captcha = $("#bitmetv_captcha").val();
+        $.get(sbRoot+"/home/getBitMeTVAuth",
+            {'username': bitmetv_user, 'password': bitmetv_pass, 'captcha': bitmetv_captcha},
+            function (data){ 
+                var JSONData = $.parseJSON(data);
+                if (JSONData.success == 1) {
+                    $("#bitmetv_uid").val(JSONData.uid);
+                    $("#bitmetv_pass").val(JSONData.pass);
+                    $("#bitmetv_passkey").val(JSONData.passkey);
+                    $("#bitmetvAuthResult").html(success);
+                } else {
+                    $("#bitmetvAuthResult").html(failure+' <b>'+JSONData.errormsg+'</b>');
+                }
+            }
+        );
+    });
 });

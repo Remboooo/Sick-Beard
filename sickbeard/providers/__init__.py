@@ -23,6 +23,7 @@ __all__ = ['ezrss',
            'womble',
            'btn',
            'nzbx',           'omgwtfnzbs',
+		   'bitmetv',
            ]
 
 import sickbeard

@@ -42,6 +42,7 @@ from sickbeard import image_cache
 from sickbeard import naming
 
 from sickbeard.providers import newznab
+from sickbeard.providers import bitmetv
 from sickbeard.common import Quality, Overview, statusStrings
 from sickbeard.common import SNATCHED, SKIPPED, UNAIRED, IGNORED, ARCHIVED, WANTED
 from sickbeard.exceptions import ex
@@ -1035,6 +1036,7 @@ class ConfigProviders:
                       omgwtfnzbs_uid=None, omgwtfnzbs_key=None,
                       tvtorrents_digest=None, tvtorrents_hash=None,
                       torrentleech_key=None,
+                      bitmetv_uid=None,bitmetv_passkey=None,bitmetv_pass=None,
  					  btn_api_key=None,
                       newzbin_username=None, newzbin_password=None,
                       provider_order=None):
@@ -1104,6 +1106,8 @@ class ConfigProviders:
                 sickbeard.TVTORRENTS = curEnabled
             elif curProvider == 'torrentleech':
                 sickbeard.TORRENTLEECH = curEnabled
+            elif curProvider == 'bitmetv':
+                sickbeard.BITMETV = curEnabled
             elif curProvider == 'btn':
                 sickbeard.BTN = curEnabled
             elif curProvider in newznabProviderDict:
@@ -1115,6 +1119,10 @@ class ConfigProviders:
         sickbeard.TVTORRENTS_HASH = tvtorrents_hash.strip()
 
         sickbeard.TORRENTLEECH_KEY = torrentleech_key.strip()
+
+        sickbeard.BITMETV_UID = bitmetv_uid.strip()
+        sickbeard.BITMETV_PASSKEY = bitmetv_passkey.strip()
+        sickbeard.BITMETV_PASS = bitmetv_pass.strip()
 
         sickbeard.BTN_API_KEY = btn_api_key.strip()
 
@@ -1163,7 +1171,7 @@ class ConfigNotifications:
                           use_trakt=None, trakt_username=None, trakt_password=None, trakt_api=None,
                           use_pytivo=None, pytivo_notify_onsnatch=None, pytivo_notify_ondownload=None, pytivo_update_library=None,
                           pytivo_host=None, pytivo_share_name=None, pytivo_tivo_name=None,
-                          use_nma=None, nma_notify_onsnatch=None, nma_notify_ondownload=None, nma_api=None, nma_priority=0 ):
+                          use_nma=None, nma_notify_onsnatch=None, nma_notify_ondownload=None, nma_api=None, nma_priority=0):
 
         results = []
 
@@ -2048,6 +2056,26 @@ class Home:
             return "Error sending Pushover notification"
 
     @cherrypy.expose
+    def getBitMeTVCaptcha(self):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        binary = bitmetv.provider._get_captcha_base64()
+        if binary is None:
+            raise cherrypy.HTTPError(503)
+        else:
+            return binary
+
+    @cherrypy.expose
+    def getBitMeTVAuth(self, username, password, captcha):
+        cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
+        result = {}
+        try:
+            result = bitmetv.provider._get_authorization(username, password, captcha)
+            result['success'] = 1
+        except bitmetv.BitMeLoginError as e:
+            result = {'success': 0, 'errormsg': str(e)}
+        return json.dumps(result)
+
+    @cherrypy.expose
     def twitterStep1(self):
         cherrypy.response.headers['Cache-Control'] = "max-age=0,no-cache,no-store"
 
@@ -2895,3 +2923,4 @@ class WebInterface:
     errorlogs = ErrorLogs()
 
     ui = UI()
+
