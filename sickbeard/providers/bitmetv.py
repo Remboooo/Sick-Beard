@@ -27,7 +27,6 @@ import re
 import socket
 import cookielib
 import base64
-from dumper import dump
 
 from sickbeard import helpers, logger, exceptions, tvcache
 
