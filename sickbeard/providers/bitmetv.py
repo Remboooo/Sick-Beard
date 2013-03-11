@@ -147,8 +147,9 @@ class BitMeTVProvider(generic.TorrentProvider):
     def _getResultsFromPage(self, html):
         result = []
         for match in self.regexes['torrents'].findall(html):
-            logger.log('Bitmetv.org match found: %s' % str(match), logger.DEBUG)
-            result.append({'id': match[0], 'name': self.htmlParser.unescape(match[1])})
+            obj = {'id': match[0], 'name': self.htmlParser.unescape(match[1]).replace(u'\xa0', ' ')}
+            logger.log('Bitmetv.org match found: %s' % str(obj), logger.DEBUG)
+            result.append(obj)
         return result
 
     def _doSearch(self, search, show=None):
@@ -170,7 +171,7 @@ class BitMeTVProvider(generic.TorrentProvider):
 
     def _get_title_and_url(self, search_result):
         if isinstance(search_result, dict) and ('id' in search_result) and ('name' in search_result):
-            title = search_result['name']
+            title = search_result['name'].replace(" ",".")
             tid = search_result['id']
             url = '%s/%s/%s.torrent' % (self.urls['torrent'], tid, sanitizeSceneName(title))
             return (title, url)
