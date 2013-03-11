@@ -27,6 +27,9 @@ import re
 import socket
 import cookielib
 import base64
+from sickbeard.helpers import sanitizeSceneName
+from urllib import urlencode, quote_plus
+from HTMLParser import HTMLParser
 
 from sickbeard import helpers, logger, exceptions, tvcache
 
@@ -39,6 +42,15 @@ class BitMeTVProvider(generic.TorrentProvider):
             'captcha': '%s/visual.php' % baseUrl,
             'loginPost': '%s%s' % (baseUrl, loginPostTarget),
             'passkey': '%s/links.php' % baseUrl,
+            'search': '%s/browse.php' % baseUrl,
+            'torrent': '%s/download.php' % baseUrl
+            }
+
+    htmlParser = HTMLParser()
+
+    regexes = {
+            'pages': re.compile('href="\/browse.php[^"]+&amp;page=([0-9]+)"'),
+            'torrents': re.compile('href="details.php\?id=([0-9]+)[^0-9][^"]*"[^>]+title="?([^ ">]+)[" ]+>')
             }
     
     _urlOpener = None
@@ -48,7 +60,7 @@ class BitMeTVProvider(generic.TorrentProvider):
     def __init__(self):
         generic.TorrentProvider.__init__(self, "BitMeTV")
 
-        self.supportsBacklog = False
+        self.supportsBacklog = True
         self.cache = BitMeTVCache(self)
         self.url = 'http://www.bitmetv.org/'
 
@@ -123,6 +135,62 @@ class BitMeTVProvider(generic.TorrentProvider):
         except socket.timeout as e:
             raise BitMeLoginError("Timeout while logging in (URL '%s')" % url, e)
 
+    # backlog search stuff below
+
+    def _getNumResultPages(self, html):
+        maxPage = 0
+        for match in self.regexes['pages'].findall(html):
+            if int(match[0]) > maxPage:
+                maxPage = int(match[0])
+        return maxPage+1
+
+    def _getResultsFromPage(self, html):
+        result = []
+        for match in self.regexes['torrents'].findall(html):
+            logger.log('Bitmetv.org match found: %s' % str(match), logger.DEBUG)
+            result.append({'id': match[0], 'name': self.htmlParser.unescape(match[1])})
+        return result
+
+    def _doSearch(self, search, show=None):
+        url = '%s?%s' % (self.urls['search'], urlencode(search))
+        html = self.getURL(url)
+        if not html:
+            return []
+        numPages = self._getNumResultPages(html)
+        logger.log('Bitmetv.org search %s returned %d result page(s)' % (str(search), numPages), logger.DEBUG)
+        result = self._getResultsFromPage(html)
+        page = 1
+        while page < numPages:
+            html = self.getURL('%s&%s' % (url, urlencode({'page': str(page)})))
+            if html:
+                result += self._getResultsFromPage(html)
+            page += 1
+        return result
+
+
+    def _get_title_and_url(self, search_result):
+        if isinstance(search_result, dict) and ('id' in search_result) and ('name' in search_result):
+            title = search_result['name']
+            tid = search_result['id']
+            url = '%s/%s/%s.torrent' % (self.urls['torrent'], tid, sanitizeSceneName(title))
+            return (title, url)
+        else:
+            return (None,None)
+
+    def _get_season_search_strings(self, show, season=None):
+        showname = sanitizeSceneName(show.name)
+        result = [{'search': '%s S%02d' % (showname, int(season)), 'cat': '0'}]
+        logger.log('Bitmetv.org season search: %s' % str(result), logger.DEBUG)
+        return result
+
+    def _get_episode_search_strings(self, episode):
+        showname = sanitizeSceneName(episode.show.name)
+        result = [{'search': '%s S%02dE%02d' % (showname, episode.season, episode.episode), 'cat': '0'}]
+        logger.log('Bitmetv.org episode search: %s' % str(result), logger.DEBUG)
+        return result
+
+
+
 class BitMeLoginError(Exception):
     def __init__(self, message, cause=None):
         self.message = message
@@ -175,3 +243,5 @@ class BitMeTVCache(tvcache.TVCache):
 
 
 provider = BitMeTVProvider()
+
+# vim: tabstop=4 expandtab shiftwidth=4 softtabstop=4
